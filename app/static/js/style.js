@@ -27,7 +27,11 @@ document.addEventListener('DOMContentLoaded', function () {
     optionExisting.addEventListener('change', toggleFields);
     toggleFields();
   }
-
+   function updateMap() {
+      const addr = document.getElementById('address').value || '';
+      document.getElementById('mapFrame').src =
+        'https://www.google.com/maps?q=' + encodeURIComponent(addr) + '&output=embed';
+    }
   // nút "Deploy" nhưng yêu cầu đăng nhập
   const newDeployBtn = document.getElementById('deploy-btn-login');
   const modalEl = document.getElementById('loginRequiredModal1');

@@ -1,6 +1,10 @@
+import hashlib
 import os
 from flask import Blueprint, render_template, redirect, request, url_for, flash, session, jsonify
 from flask_login import login_required, logout_user, current_user
+from werkzeug.utils import secure_filename
+from datetime import datetime
+from werkzeug.security import check_password_hash, generate_password_hash
 from app import login_manager, db
 from app.controller.config import WEBHOOK_SECRET
 main_bp = Blueprint('main', __name__)
@@ -47,6 +51,65 @@ def login():
 @login_required
 def index_login():
     return render_template('indexLogin.html',name_user=current_user.name_account)
+
+@main_bp.route('/overview')
+@login_required
+def overview():
+    return render_template('overview.html')
+
+
+def md5_hash(text: str) -> str:
+    return hashlib.md5(text.strip().encode('utf-8')).hexdigest()
+
+
+@main_bp.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    tab = request.args.get('tab', 'info')
+    success_msg = error_msg = None
+    u = current_user
+
+    # Lấy draft từ session (nếu có)
+    draft = session.get(f"profile_draft_{u.id}", {})
+
+    if request.method == 'POST':
+        if tab == 'info':
+            # Thu thập dữ liệu từ form
+            form_data = {
+                "name":    (request.form.get('name') or '').strip(),
+                "email":   (request.form.get('email') or '').strip(),
+                "dob":     request.form.get('dob') or '',
+                "phone":   (request.form.get('phone') or '').strip(),
+                "address": (request.form.get('address') or '').strip(),
+            }
+            # Lưu tạm vào session
+            session[f"profile_draft_{u.id}"] = form_data
+            success_msg = "Đã lưu tạm thông tin (chưa ghi vào cơ sở dữ liệu)."
+
+        elif tab == 'security':
+            old = request.form.get('old_password', '') or ''
+            new = request.form.get('new_password', '') or ''
+            confirm = request.form.get('confirm_password', '') or ''
+
+            if u.password != md5_hash(old):
+                error_msg = 'Mật khẩu cũ không đúng.'
+            elif len(new) < 8:
+                error_msg = 'Mật khẩu mới phải tối thiểu 8 ký tự.'
+            elif new != confirm:
+                error_msg = 'Xác nhận mật khẩu không khớp.'
+            else:
+                # Lưu hash mới vào session thay vì DB
+                session[f"profile_draft_pw_{u.id}"] = md5_hash(new)
+                success_msg = 'Đã lưu tạm mật khẩu mới (chưa ghi vào cơ sở dữ liệu).'
+
+    return render_template(
+        'profile.html',
+        user=u, tab=tab,
+        draft=draft,
+        success_msg=success_msg, error_msg=error_msg
+    )
+
+
 
 @main_bp.route('/logout')
 def logout_process():

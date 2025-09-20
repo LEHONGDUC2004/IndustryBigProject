@@ -19,19 +19,16 @@
             <!-- Menu bên phải -->
             <div class="flex items-center space-x-4">
                 <div class="relative">
-                    <input type="text" placeholder="Find.1.."
+                    <input type="text" placeholder="Find..."
                            class="bg-gray-800 text-white rounded-md pl-10 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
                 </div>
                 <button class="text-gray-400 hover:text-white">
                     <i class="fas fa-bell"></i>
                 </button>
-                <button class="text-gray-400 hover:text-white">
-                    <i class="fas fa-question-circle"></i>
-                </button>
-                <button class="bg-white text-gray-900 rounded-full w-8 h-8 flex items-center justify-center font-bold">
-                    F
-                </button>
+                <a href="/profile"> <button class="bg-white text-gray-900 rounded-full w-8 h-8 flex items-center justify-center font-bold">
+                   X
+                </button></a>
                 <button class="text-gray-400 hover:text-white">
                     <a href="/">LOG OUT</a>
                 </button>
@@ -43,21 +40,24 @@
 <!-- Main Content -->
 <main class="bg-gray-950 min-h-screen">
     <!-- Secondary Navigation -->
+    {% block changeCloumn %}
     <nav class="bg-gray-900 border-b border-gray-800">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center space-x-8">
-               <a href="#"
+               <a href="/overview"
                    class="py-4 px-1 text-sm font-medium text-gray-400 hover:text-white hover:border-gray-500 border-b-2 border-transparent">Overview</a>
                 <a href="#" class="py-4 px-1 text-sm font-medium border-b-2 border-blue-500 text-white">Deployments</a>
                 <a href="#"
                    class="py-4 px-1 text-sm font-medium text-gray-400 hover:text-white hover:border-gray-500 border-b-2 border-transparent">Activity</a>
                 <a href="#"
                    class="py-4 px-1 text-sm font-medium text-gray-400 hover:text-white hover:border-gray-500 border-b-2 border-transparent">Domains</a>
-                <a href="#"
+                <a href="/profile"
                    class="py-4 px-1 text-sm font-medium text-gray-400 hover:text-white hover:border-gray-500 border-b-2 border-transparent">Settings</a>
             </div>
         </div>
     </nav>
+    {% endblock %}
+    {% block profile %}
     <div class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <h1 class="text-2xl font-bold text-gray-100 mb-2">Deployments</h1>
         <p class="text-gray-400 mb-6">All deployments from {{ name_user }}'s-projects</p>
@@ -122,6 +122,7 @@
         <!--                </div>-->
         <!--            </div>-->
     </div>
+     {% endblock %}
 </main>
 </body>
 {% endblock %}
