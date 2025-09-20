@@ -1,0 +1,14 @@
+{# templates/admin_login.html #}
+{# bỏ dòng: {% extends 'admin/master.html' %} #}
+<!doctype html>
+<html lang="vi">
+<head><meta charset="utf-8"><title>Đăng nhập Quản trị</title></head>
+<body>
+  <h2>ĐĂNG NHẬP QUẢN TRỊ</h2>
+  <form method="post" action="{{ url_for('auth.admin_login') }}">
+    <input type="text" name="username" placeholder="Tên đăng nhập" required>
+    <input type="password" name="password" placeholder="Mật khẩu" required>
+    <button type="submit">Đăng nhập</button>
+  </form>
+</body>
+</html>
