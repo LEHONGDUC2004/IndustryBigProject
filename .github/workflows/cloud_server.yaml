@@ -1,0 +1,82 @@
+name: CI/CD Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Add SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Compress source code
+        run: |
+          tar --exclude=app.tar.gz \
+              --exclude=__pycache__ \
+              --exclude=.git \
+              --exclude=node_modules \
+              --ignore-failed-read \
+              -czf app.tar.gz .
+
+      - name: Copy code to EC2
+        env:
+          HOST: ${{ secrets.VM_HOST }}
+          USER: ${{ secrets.VM_USER }}
+          PORT: ${{ secrets.VM_PORT }}
+        run: |
+          scp -o StrictHostKeyChecking=no -P $PORT app.tar.gz $USER@$HOST:/home/$USER/app.tar.gz
+
+      - name: Deploy on EC2
+        env:
+          HOST: ${{ secrets.VM_HOST }}
+          USER: ${{ secrets.VM_USER }}
+          PORT: ${{ secrets.VM_PORT }}
+        run: |
+          ssh -o StrictHostKeyChecking=no -p $PORT $USER@$HOST "
+          # Cài Docker nếu chưa có
+          sudo apt update
+           if ! command -v docker &>/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y docker.io ansible sshpass
+            sudo systemctl enable docker
+            sudo systemctl start docker
+          fi
+          # Cài Docker Compose nếu chưa có
+          if ! command -v docker-compose &>/dev/null && ! docker compose version &>/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y docker-compose-plugin || \
+            (sudo curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose && sudo chmod +x /usr/local/bin/docker-compose)
+          fi
+          sudo usermod -aG docker ubuntu
+          sudo mkdir /home/ubuntu/uploaded_source_code
+          sudo mkdir /home/ubuntu/extracted_source_code
+          sudo mkdir /home/ubuntu/replaced_compressed_source_code
+          
+          sudo chmod -R 777 /home/ubuntu/uploaded_source_code
+          sudo chmod -R 777 /home/ubuntu/extracted_source_code
+          sudo chmod -R 777 /home/ubuntu/replaced_compressed_source_code
+          # Ghi đúng định dạng sudoers để tránh hỏng sudo
+          echo 'ubuntu ALL=(ALL) NOPASSWD:ALL' | sudo tee /etc/sudoers.d/ubuntu
+          # Tạo thư mục và giải nén mã nguồn
+          mkdir -p /home/ubuntu/IndustryProject
+          tar xzf /home/ubuntu/app.tar.gz -C /home/ubuntu/IndustryProject --strip-components=1
+          rm /home/ubuntu/app.tar.gz
+          cp -r /home/ubuntu/IndustryProject/project-ansible /home/ubuntu/project-ansible
+          cp /home/ubuntu/IndustryProject/deploy_from_s3.sh /home/ubuntu/deploy_from_s3.sh
+          cd
+          sudo chmod 777 /home/ubuntu/deploy_from_s3.sh
+          cd /home/ubuntu/project-ansible
+          ansible-playbook -i inventory.ini playbook.yml
+          cd
+          cd /home/ubuntu/IndustryProject
+          sudo docker-compose up -d --build
+          "
