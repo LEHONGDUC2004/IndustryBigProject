@@ -42,7 +42,7 @@ jobs:
           PORT: ${{ secrets.VM_PORT }}
         run: |
           ssh -o StrictHostKeyChecking=no -p $PORT $USER@$HOST "
-          # Cài Docker nếu chưa có
+          # Cài Docker nếu chưa có..
           sudo apt update
            if ! command -v docker &>/dev/null; then
             sudo apt-get update
